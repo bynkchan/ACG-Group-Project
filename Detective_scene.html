@@ -1,0 +1,340 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+ <title>Ambient, Directional and Point Shading with Marble Texture</title>
+ <meta name="author" content="AKIRABHA CHANUNTRANONT (5121DG04-3)" />
+</head>
+<body>
+ <canvas id="glCanvas" style="width:400px; height:400px;"></canvas>
+ 
+ <script id="vertex-shader" type="notjs">
+#version 300 es
+in vec4 a_position;
+in vec4 a_normal;
+
+out vec3 position;
+out vec3 normal;
+out vec3 texcoord;
+
+uniform float u_time;
+
+const float M_PI = 3.14159265358979323846;  /* pi */
+
+void main() {
+
+   // X-rotation
+   const float theta = M_PI / 4.0;
+   float c = cos(theta);
+   float s = sin(theta);
+   mat4 Rx = mat4(
+      1.0, 0.0, 0.0, 0.0,
+      0.0,  c,   s,  0.0,
+      0.0, -s,   c,  0.0,
+      0.0, 0.0, 0.0, 1.0
+   );
+
+   // Y-rotation
+   float phi = u_time / 4.0;
+   c = cos(phi);
+   s = sin(phi);
+   mat4 Ry = mat4(
+       c,  0.0, -s,  0.0,
+      0.0, 1.0, 0.0, 0.0,
+       s,  0.0,  c,  0.0,
+      0.0, 0.0, 0.0, 1.0
+   );
+
+   // Z-rotation
+	float psi = M_PI / 16.0;
+   c = cos(psi);
+   s = sin(psi);
+	mat4 Rz = mat4(
+       c,   s,  0.0, 0.0,
+      -s,   c,  0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+	);
+
+   // Scaling
+   const float sca = 0.5;
+   const mat4 S = mat4(
+      sca, 0.0, 0.0, 0.0,
+      0.0, sca, 0.0, 0.0,
+      0.0, 0.0, sca, 0.0,
+      0.0, 0.0, 0.0, 1.0
+   );
+   mat4 H = Ry * Rz * Rx * S;
+
+   /* Determine position. */
+   gl_Position = H * a_position;
+
+   /* Output of texture coordinates and normal. */
+   position = gl_Position.xyz;
+   normal = (H*a_normal).xyz;
+   texcoord = a_position.xyz*0.5+0.5;
+}
+ </script>
+ <script id="fragment-shader" type="notjs">
+#version 300 es
+precision mediump float;
+
+// Note:  I am colour coding the light sources for ease of distinction.
+
+in vec3 position;
+in vec3 texcoord;
+in vec3 normal;
+out vec4 color_out;
+
+// Random Number Generator
+float rng(vec3 co){
+   const highp float seed = 12.9898;
+   highp float a = seed;
+   highp float b = 78.233, c = 43758.5453;
+   highp float dt= dot(co.xyz, vec3(a,b,c));
+   highp float sn= mod(dt,3.14159265358979323846);
+   return fract(sin(sn) * c);
+}
+
+// Value Noise
+float vnoise(vec3 st){
+   vec3 i = floor(st), f = fract(st);
+   float a = rng(i),                  b = rng(i + vec3(1.0, 0.0, 1.0)),
+         c = rng(i + vec3(0.0, 1.0, 1.0)), d = rng(i + vec3(1.0, 1.0, 1.0));
+   vec3 uv= smoothstep(0.0, 0.7, f);
+   return mix( a, b, uv.x ) + (c-a)*uv.y * (1.0-uv.x) + (d-b)*uv.x*uv.y + (c-a)*uv.z * (1.0-uv.x) + (d-b)*uv.x*uv.z; 
+}
+
+// Marble texture
+float marbleturbulence(vec3 p){
+   float f = 0.0, scale;
+   for (int i=0; i<4; i++){
+      scale = pow(pow(2.0, 4.0/3.0), float(i));
+      f += abs(vnoise(p*scale))/scale;
+   }
+   return f;
+}
+
+// Ambient light
+vec3 ambientshading( vec3 p, vec3 n, vec3 csurf) {
+   vec3 l = n; // light distribution
+   vec3 clight = vec3(0.75); // Colour of light source
+   return max(0.0,dot(l,n)) * clight * csurf; // Shaded colour
+}
+
+// Directional light
+vec3 directionalshading( vec3 p, vec3 n, vec3 csurf ) {
+   const vec3 l = normalize( vec3(0.25, 0.25, 0.0) ); // light distribution
+   vec3 clight = vec3(0.0, 0.0, 1.0); // Colour of light source
+   return max(0.0,dot(l,n)) * clight * csurf; // Shaded colour
+}
+
+// Point light 
+vec3 pointshading( vec3 p, vec3 n, vec3 csurf ) {
+   const vec3 plight = vec3( -1.0, -1.0, -0.5 ); // Point source location
+   vec3 d = plight-p; // distance between point source and object 
+   float r = sqrt(dot(d,d)); // radius of illumination
+   vec3 l = d / r; // light distribution
+   vec3 clight = vec3(1.0, 0.0, 0.0) * pow( 1.5 / max( r, 1.0 ), 2.0 ); // Colour of light source
+   return 0.25 * csurf + max(0.0,dot(l,n)) * clight * csurf; // Shaded colour
+}
+
+// Main program
+void main() {
+   // Texture 
+   float tex = marbleturbulence(texcoord.xyz/0.15); // Texture values
+   float tex_colour = 1.0 + sin( texcoord.x / 80.0 + 10.0 * tex ) / 2.0;
+   vec3 csurf = vec3(tex_colour); // Surface color
+
+   // Lighting
+   vec3 lighting = ambientshading(position, normal, csurf) +
+                   directionalshading(position, normal, csurf) + 
+                   pointshading(position, normal, csurf);
+
+   color_out = vec4(lighting, 1.0); 
+}
+ </script>
+ <script type="text/javascript">
+function createProgram( gl, vertexSrc, fragmentSrc ) {
+   let vshd = gl.createShader( gl.VERTEX_SHADER );
+   gl.shaderSource( vshd, vertexSrc );
+   gl.compileShader( vshd );
+   if (!gl.getShaderParameter( vshd, gl.COMPILE_STATUS ))
+      throw new Error( "Unable to compile shader: "+gl.getShaderInfoLog( vshd ));
+   let fshd = gl.createShader( gl.FRAGMENT_SHADER );
+   gl.shaderSource( fshd, fragmentSrc );
+   gl.compileShader( fshd );
+   if (!gl.getShaderParameter( fshd, gl.COMPILE_STATUS ))
+      throw new Error( "Unable to compile shader: "+gl.getShaderInfoLog( fshd ));
+   let prog = gl.createProgram();
+   gl.attachShader( prog, vshd );
+   gl.attachShader( prog, fshd );
+   gl.linkProgram( prog );
+   if (!gl.getProgramParameter( prog, gl.LINK_STATUS ))
+      throw new Error( "Unable to link program: "+gl.getProgramInfoLog( prog ));
+   return prog;
+}
+
+function init() {
+   var c = document.getElementById("glCanvas");
+   var gl = c.getContext('webgl2');
+   if (!gl)
+      throw new Error("WebGL unsupported!");
+
+   // Set background colour
+   gl.clearColor(0.172, 0.729, 0.938, 1.0);
+
+   var vertexPosBuffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+   const vertices = [
+  // Front face
+  -1.0, -1.0,  1.0,
+   1.0, -1.0,  1.0,
+   1.0,  1.0,  1.0,
+  -1.0,  1.0,  1.0,
+  
+  // Back face
+  -1.0, -1.0, -1.0,
+  -1.0,  1.0, -1.0,
+   1.0,  1.0, -1.0,
+   1.0, -1.0, -1.0,
+  
+  // Top face
+  -1.0,  1.0, -1.0,
+  -1.0,  1.0,  1.0,
+   1.0,  1.0,  1.0,
+   1.0,  1.0, -1.0,
+  
+  // Bottom face
+  -1.0, -1.0, -1.0,
+   1.0, -1.0, -1.0,
+   1.0, -1.0,  1.0,
+  -1.0, -1.0,  1.0,
+  
+  // Right face
+   1.0, -1.0, -1.0,
+   1.0,  1.0, -1.0,
+   1.0,  1.0,  1.0,
+   1.0, -1.0,  1.0,
+  
+  // Left face
+  -1.0, -1.0, -1.0,
+  -1.0, -1.0,  1.0,
+  -1.0,  1.0,  1.0,
+  -1.0,  1.0, -1.0,
+];
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   vertexPosBuffer.itemSize = 3;
+   vertexPosBuffer.numItems = 4*6;
+
+   var normalPosBuffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, normalPosBuffer);
+   const normals = [
+  // Front face
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+   0.0, 0.0, 1.0,
+  
+  // Back face
+   0.0, 0.0, -1.0,
+   0.0, 0.0, -1.0,
+   0.0, 0.0, -1.0,
+   0.0, 0.0, -1.0,
+  
+  // Top face
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+   0.0, 1.0, 0.0,
+  
+  // Bottom face
+   0.0, -1.0, 0.0,
+   0.0, -1.0, 0.0,
+   0.0, -1.0, 0.0,
+   0.0, -1.0, 0.0,
+  
+  // Right face
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+   1.0, 0.0, 0.0,
+  
+  // Left face
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+];
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+   normalPosBuffer.itemSize = 3;
+   normalPosBuffer.numItems = 4*6;
+
+	const indexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+	// This array defines each face as two triangles, using the
+	// indices into the vertex array to specify each triangle's
+	// position.
+	const indices = [
+    0,  1,  2,      0,  2,  3,    // front
+    4,  5,  6,      4,  6,  7,    // back
+    8,  9,  10,     8,  10, 11,   // top
+    12, 13, 14,     12, 14, 15,   // bottom
+    16, 17, 18,     16, 18, 19,   // right
+    20, 21, 22,     20, 22, 23,   // left
+	];
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+   // Create our shader program
+   var vs = document.querySelector("#vertex-shader").text.trim();
+   var fs = document.querySelector("#fragment-shader").text.trim();
+   var program = createProgram(gl, vs, fs);
+   gl.useProgram(program);
+
+   // Get the vertex attribute
+   program.vertexPosAttrib = gl.getAttribLocation(program, 'a_position');
+   program.normalPosAttrib = gl.getAttribLocation(program, 'a_normal');
+
+   // Remember to add and use u_time uniform in your shaders
+   var u_time_loc = gl.getUniformLocation(program, "u_time");
+
+   gl.enable(gl.DEPTH_TEST);
+
+   function render( ms_since_page_loaded ) {
+      // Set background colour
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      // Convert to seconds and send to shader
+      gl.uniform1f( u_time_loc, ms_since_page_loaded * 0.001 );
+
+      // Draw scene here using uniform float u_time to animate
+      // Below is an example using the relevant code from the WebGL skeleton
+      gl.useProgram( program );
+     
+      // Vertices
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+      gl.enableVertexAttribArray(program.vertexPosAttrib);
+      gl.vertexAttribPointer(program.vertexPosAttrib, vertexPosBuffer.itemSize, gl.FLOAT, false, 0, 0);
+     
+      // Normals
+      gl.bindBuffer(gl.ARRAY_BUFFER, normalPosBuffer);
+      gl.enableVertexAttribArray(program.normalPosAttrib);
+      gl.vertexAttribPointer(program.normalPosAttrib, normalPosBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+		// Indices
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+      // Draw
+		gl.drawElements( gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0 );
+
+      // Request animation again
+      requestAnimationFrame( render );
+   }
+
+   // First render which will request animation
+   render( 0 );
+}
+window.onload = init;
+ </script>
+</body>
+</html>
