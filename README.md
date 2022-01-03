@@ -1,5 +1,5 @@
 # ACG-Group-Project
-Final project for Advanced Computer Graphics course
+Final project for Advanced Computer Graphics course. [Link to our final report](https://www.overleaf.com/read/vgsbmwyvfddw)
 
 
 ## Introduction
