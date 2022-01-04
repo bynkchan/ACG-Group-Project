@@ -11,29 +11,42 @@
         <script src="js/three.js"></script>
 		<script type="module">
 
+			// Initialize the scene
             const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			const bgTexture = new THREE.TextureLoader().load('textures/test_box/crt.jpg');
+			const bgGeometry = new THREE.PlaneGeometry(9, 5);
+			const bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture });
+			const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+			bgMesh.position.set(0, 0, -1);
+			scene.add(bgMesh);
 
+			// Set rendering properties
+			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 			const renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
-
-			const geometry = new THREE.BoxGeometry();
-			const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-			const cube = new THREE.Mesh( geometry, material );
-			scene.add( cube );
-
 			camera.position.z = 5;
 
+			// Make the glass lens
+			const GlassGeometry = new THREE.SphereGeometry();
+			const GlassMaterial = new THREE.MeshPhysicalMaterial( { 
+				roughness: 0,  // Roughness of the surface
+				transmission: 1,  // Light transmission through the surface
+				thickness: 1, // Thickness (density?) of the glass, affects refraction
+				reflectivity: 0.2, // Reflectivity of the glass, affects refraction
+				ior: 1.5, // Index of Refraction
+				clearcoat: 0.5, // Reflective laquer coating
+			} );
+			const glass = new THREE.Mesh( GlassGeometry, GlassMaterial );
+			scene.add( glass );
+
+			// Animate the scene
 			function animate() {
 				requestAnimationFrame( animate );
-
-				cube.rotation.x += 0.01;
-				cube.rotation.y += 0.01;
-
+				glass.rotation.x += 0.00;
+				glass.rotation.y += 0.00;
 				renderer.render( scene, camera );
 			};
-
 			animate();
 
 		</script>
