@@ -2,7 +2,8 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>Detective Scene</title>
+		<title>Magnifying Glass</title>
+		<author>Akirabha Chanuntranont 5121DG04-3</author>
 		<style>
 			body { margin: 0; }
 		</style>
@@ -10,6 +11,9 @@
 	<body>
         <script src="js/three.js"></script>
 		<script type="module">
+			/*
+			This code makes use of functions and shapes from the three.js library, whose documentation is available at this link:  https://threejs.org/docs
+			*/
 
 			// Initialize the scene
             const scene = new THREE.Scene();
@@ -28,7 +32,8 @@
 			camera.position.z = 5;
 
 			// Make the glass lens
-			const GlassGeometry = new THREE.SphereGeometry();
+			const GlassGeometry = new THREE.SphereGeometry(); // Begin with a sphere (preset shape in three.js)
+			GlassGeometry.applyMatrix( new THREE.Matrix4().makeScale( 1.0, 1.0, 0.4 ) ); // Apply transformation matrix to turn it into an ellipsoid
 			const GlassMaterial = new THREE.MeshPhysicalMaterial( { 
 				roughness: 0,  // Roughness of the surface
 				transmission: 1,  // Light transmission through the surface
@@ -43,8 +48,8 @@
 			// Animate the scene
 			function animate() {
 				requestAnimationFrame( animate );
-				glass.rotation.x += 0.00;
-				glass.rotation.y += 0.00;
+				glass.rotation.x += 0.03;
+				glass.rotation.y += 0.01;
 				renderer.render( scene, camera );
 			};
 			animate();
