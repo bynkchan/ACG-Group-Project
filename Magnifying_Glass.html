@@ -24,6 +24,13 @@
 			bgMesh.position.set(0, 0, -1);
 			scene.add(bgMesh);
 
+			// Lighting
+			const directionalLight = new THREE.DirectionalLight( { 
+				color: 0xffffff, 
+				intensity: 0.8 
+			} );
+			scene.add( directionalLight );
+
 			// Set rendering properties
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 			const renderer = new THREE.WebGLRenderer();
@@ -34,22 +41,45 @@
 			// Make the glass lens
 			const GlassGeometry = new THREE.SphereGeometry(); // Begin with a sphere (preset shape in three.js)
 			GlassGeometry.applyMatrix( new THREE.Matrix4().makeScale( 1.0, 1.0, 0.4 ) ); // Apply transformation matrix to turn it into an ellipsoid
-			const GlassMaterial = new THREE.MeshPhysicalMaterial( { 
+			const GlassMaterial = new THREE.MeshPhysicalMaterial( { // Physical rendering
 				roughness: 0,  // Roughness of the surface
 				transmission: 1,  // Light transmission through the surface
 				thickness: 1, // Thickness (density?) of the glass, affects refraction
 				reflectivity: 0.2, // Reflectivity of the glass, affects refraction
 				ior: 1.5, // Index of Refraction
-				clearcoat: 0.5, // Reflective laquer coating
+				clearcoat: 0.5 // Reflective laquer coating
 			} );
-			const glass = new THREE.Mesh( GlassGeometry, GlassMaterial );
-			scene.add( glass );
+			const Glass = new THREE.Mesh( GlassGeometry, GlassMaterial );
+
+			// Make the lens rim
+			const RimGeometry = new THREE.TorusGeometry(
+				1,             // Radius
+				0.2,           // Tube
+				100,           // Radial Segments
+				100,           // Tubular Segments
+				Math.PI * 2    // Arc
+			);
+			const RimMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
+				color: 0xffffff,
+        		metalness: 1.0,
+				roughness: 0.4,
+        		clearcoat: 1.0,
+        		envMap: bgTexture
+    		});
+
+			const Rim = new THREE.Mesh( RimGeometry, RimMaterial );
+
+			// Group objects to make a magnifying glass
+			const MagnifyingGlass = new THREE.Object3D();  // Generic container for three object class
+			MagnifyingGlass.add(Glass); // Add the glass lens to the magnifying glass
+			MagnifyingGlass.add(Rim); // Add the rim to the magnifying glass
+			scene.add(MagnifyingGlass);
 
 			// Animate the scene
 			function animate() {
 				requestAnimationFrame( animate );
-				glass.rotation.x += 0.03;
-				glass.rotation.y += 0.01;
+				MagnifyingGlass.rotation.x += 0.00;
+				MagnifyingGlass.rotation.y += 0.01;
 				renderer.render( scene, camera );
 			};
 			animate();
