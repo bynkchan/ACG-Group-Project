@@ -14,7 +14,6 @@
 			/*
 			This code makes use of functions and shapes from the three.js library, whose documentation is available at this link:  https://threejs.org/docs
 			*/
-
 			// Initialize the scene
             const scene = new THREE.Scene();
 			const bgTexture = new THREE.TextureLoader().load('textures/test_box/crt.jpg');
@@ -24,6 +23,7 @@
 			bgMesh.position.set(0, 0, -1);
 			scene.add(bgMesh);
 
+
 			// Lighting
 			const directionalLight = new THREE.DirectionalLight( { 
 				color: 0xffffff, 
@@ -31,12 +31,14 @@
 			} );
 			scene.add( directionalLight );
 
+
 			// Set rendering properties
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 			const renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 			camera.position.z = 5;
+
 
 			// Make the glass lens
 			const GlassGeometry = new THREE.SphereGeometry(); // Begin with a sphere (preset shape in three.js)
@@ -51,14 +53,42 @@
 			} );
 			const Glass = new THREE.Mesh( GlassGeometry, GlassMaterial );
 
+
 			// Make the lens rim
-			const RimGeometry = new THREE.TorusGeometry(
-				1,             // Radius
-				0.2,           // Tube
-				100,           // Radial Segments
-				100,           // Tubular Segments
-				Math.PI * 2    // Arc
+			const xrimcenter = 0;
+			const yrimcenter = 0;
+			const rimradius = 1;
+			const rimdepth = 0.7;
+			const OuterRim = new THREE.Shape();
+			OuterRim.absarc(
+				xrimcenter,   // x-center
+				yrimcenter,   // y-center
+				rimradius,   // radius
+				0,   // start angle
+				Math.PI*1.99, // end angle (must overlap to avoid clipping)
+				false  // sweep arc clockwise?
 			);
+			const InnerRim = new THREE.Path();
+			InnerRim.absarc(
+				xrimcenter,   // x-center
+				yrimcenter,   // y-center
+				rimradius*0.9,   // radius
+				0,   // start angle
+				Math.PI*2.01, // end angle (must overlap to avoid clipping)
+				true  // sweep arc clockwise?
+			);
+			OuterRim.holes.push(InnerRim);
+			const RimExtrudeSettings = {
+				steps: 1,
+				depth: rimdepth,
+				bevelEnabled: true,
+				bevelThickness: 0.05,
+				bevelSize: 0.07,
+				bevelOffset: 0,
+				bevelSegments: 100,
+				curveSegments: 500
+			};
+			const RimGeometry = new THREE.ExtrudeGeometry(OuterRim, RimExtrudeSettings);
 			const RimMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
 				color: 0xffffff,
         		metalness: 1.0,
@@ -66,14 +96,16 @@
         		clearcoat: 1.0,
         		envMap: bgTexture
     		});
-
 			const Rim = new THREE.Mesh( RimGeometry, RimMaterial );
+			Rim.position.z = -rimdepth/2.0; // Center ring in middle of lens for extrusion
+
 
 			// Group objects to make a magnifying glass
 			const MagnifyingGlass = new THREE.Object3D();  // Generic container for three object class
 			MagnifyingGlass.add(Glass); // Add the glass lens to the magnifying glass
 			MagnifyingGlass.add(Rim); // Add the rim to the magnifying glass
 			scene.add(MagnifyingGlass);
+
 
 			// Animate the scene
 			function animate() {
@@ -83,7 +115,6 @@
 				renderer.render( scene, camera );
 			};
 			animate();
-
 		</script>
 	</body>
 </html>
