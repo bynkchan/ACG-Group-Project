@@ -17,7 +17,7 @@
 			// Initialize the scene
             const scene = new THREE.Scene();
 			const bgTexture = new THREE.TextureLoader().load('textures/test_box/crt.jpg');
-			const bgGeometry = new THREE.PlaneGeometry(9, 5);
+			const bgGeometry = new THREE.PlaneGeometry(18, 10);
 			const bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture });
 			const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
 			bgMesh.position.set(0, 0, -1);
@@ -30,6 +30,9 @@
 				intensity: 0.8 
 			} );
 			scene.add( directionalLight );
+			directionalLight.position.x = 0.0;
+			directionalLight.position.y = 1.0;
+			directionalLight.position.z = 0.0;
 
 
 			// Set rendering properties
@@ -41,7 +44,8 @@
 
 
 			// Make the glass lens
-			const GlassGeometry = new THREE.SphereGeometry(); // Begin with a sphere (preset shape in three.js)
+			const lensradius = 1.0;
+			const GlassGeometry = new THREE.SphereGeometry(lensradius); // Begin with a sphere
 			GlassGeometry.applyMatrix( new THREE.Matrix4().makeScale( 1.0, 1.0, 0.4 ) ); // Apply transformation matrix to turn it into an ellipsoid
 			const GlassMaterial = new THREE.MeshPhysicalMaterial( { // Physical rendering
 				roughness: 0,  // Roughness of the surface
@@ -57,7 +61,7 @@
 			// Make the lens rim
 			const xrimcenter = 0;
 			const yrimcenter = 0;
-			const rimradius = 1;
+			const rimradius = lensradius;
 			const rimdepth = 0.7;
 			const OuterRim = new THREE.Shape();
 			OuterRim.absarc(
@@ -100,10 +104,44 @@
 			Rim.position.z = -rimdepth/2.0; // Center ring in middle of lens for extrusion
 
 
+			// Make handle
+			const linkradius = rimdepth/2.7;
+			const tube = linkradius*0.5;
+			const ylinkpos = -rimradius-tube*0.8; // Move link down to edge of rim
+			const handleLength = rimradius*1.3;
+			const handleGirth = linkradius;
+			const yhandlepos = (ylinkpos)-(handleLength/1.3); // Move handle down to be in line with link
+			const LinkGeometry = new THREE.TorusGeometry( linkradius, tube, 20, 100 );
+			const LinkMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
+				color: 0xffffff,
+        		metalness: 1.0,
+				roughness: 0.4,
+        		clearcoat: 1.0,
+        		envMap: bgTexture
+    		});
+			const Link = new THREE.Mesh( LinkGeometry, LinkMaterial ); // Metal link between handle and rim
+			Link.position.y = ylinkpos; // Move link down to edge of rim
+			Link.rotation.x = Math.PI/2; // Rotate to put it in the plane of the rim
+			const HandleGeometry = new THREE.SphereGeometry(handleLength); // Begin with a sphere
+			HandleGeometry.applyMatrix( new THREE.Matrix4().makeScale( 0.25, 1.0, 0.25 ) ); // Apply transformation matrix to turn it into an ellipsoid
+			const HandleMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
+				color: 0xffffff,
+        		metalness: 1.0,
+				roughness: 0.4,
+        		clearcoat: 1.0,
+        		envMap: bgTexture
+    		});
+			const Handle = new THREE.Mesh( HandleGeometry, HandleMaterial );
+			Handle.position.y = yhandlepos  // Move handle down to be in line with link
+
+
 			// Group objects to make a magnifying glass
 			const MagnifyingGlass = new THREE.Object3D();  // Generic container for three object class
 			MagnifyingGlass.add(Glass); // Add the glass lens to the magnifying glass
 			MagnifyingGlass.add(Rim); // Add the rim to the magnifying glass
+			MagnifyingGlass.add(Link); // Add the link to the magnifying glass
+			MagnifyingGlass.add(Handle); // Add the handle to the magnifying glass
+			MagnifyingGlass.position.y = 0.8;
 			scene.add(MagnifyingGlass);
 
 
@@ -112,6 +150,7 @@
 				requestAnimationFrame( animate );
 				MagnifyingGlass.rotation.x += 0.00;
 				MagnifyingGlass.rotation.y += 0.01;
+				Handle.rotation.y += 0.01;
 				renderer.render( scene, camera );
 			};
 			animate();
