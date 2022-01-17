@@ -2,38 +2,77 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>Detective Scene</title>
+		<title>Crumpled paper</title>
 		<style>
 			body { margin: 0; }
+            canvas{ display:block;}
 		</style>
 	</head>
 	<body>
         <script src="js/three.js"></script>
 		<script type="module">
-
+            import { OrbitControls } from './js/OrbitControls.js';
+            import { GLTFLoader } from './js/GLTFLoader.js';
             const scene = new THREE.Scene();
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+            
+            const loader = new GLTFLoader();
+        
 
 			const renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
+            scene.background = new THREE.Color('black');
 
-			const geometry = new THREE.BoxGeometry();
-			const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-			const cube = new THREE.Mesh( geometry, material );
-			scene.add( cube );
+            //var normal = new THREE.TextureLoader().load("./textures/Crumpled.jpg");
+            //var bump = new THREE.TextureLoader().load("./textures/normal.jpg");
 
-			camera.position.z = 5;
+			//const geometry = new THREE.BoxGeometry(4.5, 6, 0.01);
+            //const material = new THREE.MeshBasicMaterial( { map: normal } );
+			//const cube = new THREE.Mesh( geometry, material );
+            
+
+            
+
+			camera.position.z = 10;
 
 			function animate() {
 				requestAnimationFrame( animate );
-
-				cube.rotation.x += 0.01;
-				cube.rotation.y += 0.01;
-
 				renderer.render( scene, camera );
 			};
 
+            function initControls() {
+                var controls = new OrbitControls(camera, renderer.domElement);
+                controls.target.set( 0, 0, 0 );
+                controls.enableDamping = true;
+                //controls.dampingFactor = 0.25;
+                controls.enableZoom = true;
+                controls.autoRotate = false;
+                controls.autoRotateSpeed = 0.5;
+                controls.minDistance = 1;
+                controls.maxDistance = 2000;
+                controls.enablePan = true;
+            }
+
+            loader.load(
+                // resource URL
+                './crumple1.gltf',
+                // called when the resource is loaded
+                function ( gltf ) {
+
+                    scene.add( gltf.scene );
+
+                    gltf.animations; // Array<THREE.AnimationClip>
+                    gltf.scene; // THREE.Group
+                    gltf.scenes; // Array<THREE.Group>
+                    gltf.cameras; // Array<THREE.Camera>
+                    gltf.asset; // Object
+
+                }
+            );
+            const light = new THREE.HemisphereLight( 0xffffff, 0x000000, 1 );
+            scene.add( light );
+            initControls()
 			animate();
 
 		</script>
