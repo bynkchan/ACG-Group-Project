@@ -1,0 +1,1 @@
+Cigar object source: https://sketchfab.com/3d-models/cigar-63a0cc2192284d9c8cfdec0ed630ba03
