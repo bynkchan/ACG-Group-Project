@@ -41,11 +41,10 @@
 			// Define vertex shader
 			function vertexShader() {
   				return `
-    				varying vec3 vUv; 
+    				varying vec3 resolution; 
 
     				void main() {
-      					vUv = position; 
-
+      					resolution = position; 
       					vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
       					gl_Position = projectionMatrix * modelViewPosition; 
     				}
@@ -55,12 +54,55 @@
 			// Define fragment shader
 			function fragmentShader() {
 				return `
-      				uniform vec3 colorA; 
-      				uniform vec3 colorB; 
-      				varying vec3 vUv;
+      				varying vec3 resolution;
 
+					// Random Number Generator
+					float rng(vec3 co){
+   						const highp float seed = 12.9898;
+   						highp float a = seed;
+   						highp float b = 78.233, c = 43758.5453;
+   						highp float dt= dot(co.xyz, vec3(a,b,c));
+   						highp float sn= mod(dt,3.14159265358979323846);
+   						return fract(sin(sn) * c);
+					}
+
+					// Value Noise
+					float vnoise(vec3 st){
+   						vec3 i = floor(st), f = fract(st);
+   						float a = rng(i), b = rng(i + vec3(1.0, 0.0, 1.0)), c = rng(i + vec3(0.0, 1.0, 1.0)), d = rng(i + vec3(1.0, 1.0, 1.0));
+   						vec3 uv= smoothstep(0.0, 0.7, f);
+   						return mix( a, b, uv.x ) + (c-a)*uv.y * (1.0-uv.x) + (d-b)*uv.x*uv.y + (c-a)*uv.z * (1.0-uv.x) + (d-b)*uv.x*uv.z; 
+					}
+
+					// Marble texture
+					float marbleturbulence(vec3 p){
+   						float f = 0.0, scale;
+   						for (int i=0; i<4; i++){
+      						scale = pow(pow(2.0, 4.0/3.0), float(i));
+    						f += abs(vnoise(p*scale))/scale;
+   						}
+   						return f;
+					}
+
+					// Wood texture
+					float woodturbulence(vec3 p){
+						float f = 0.0, scale;
+						for (int i=0; i<4; i++){
+							scale = pow( pow(2.0, 4.0/3.0), float(i) );
+							f += vnoise(p*scale)/scale;
+						}
+						return f;
+					}
+
+					// Shader program
       				void main() {
-       	 				gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
+						// Texturing
+						float noise = woodturbulence(resolution);
+						float tex = 1.0 + sin(resolution.x*30.0 + 0.2*noise)/2.0;
+
+						vec3 csurf = vec3(0.75, 0.45, 0.2)*tex; // Surface color
+
+       	 				gl_FragColor = vec4(csurf, 1.0);
       				}
   				`
 			}
@@ -86,22 +128,13 @@
 				camera.position.z = 5;
 			}
 
-			// Custom materials
-			const woodmaterial = new THREE.ShaderMaterial( {
-				uniforms: {
-					time: { value: 1.0 },
-					resolution: { value: new THREE.Vector3() }
-				},
-				vertexShader: document.getElementById( 'vertexShader' ).textContent,
-				fragmentShader: document.getElementById( 'fragmentShader' ).textContent
-			} );
-
 			// Make the magnifying glass
 			function addMagnifyingGlass(){
 				// Uniforms for shaders
 				let uniforms = {
-        			colorB: {type: 'vec3', value: new THREE.Color(0xACB6E5)},
-        			colorA: {type: 'vec3', value: new THREE.Color(0x74ebd5)}
+					time: { value: 1.0 },
+					resolution: { value: new THREE.Vector3() },
+					normal: { value: new THREE.Vector3() }
     			}
 
 				// Wooden material for wood components
