@@ -54,13 +54,9 @@
                 controls.enablePan = true;
             }
 
-            loader.load(
-                // resource URL
-                './crumple1.gltf',
-                // called when the resource is loaded
-                function ( gltf ) {
+            loader.load('./models/crumple2.gltf',function ( gltf ) {
 
-                    scene.add( gltf.scene );
+                    const crumple2 = scene.add( gltf.scene );
 
                     gltf.animations; // Array<THREE.AnimationClip>
                     gltf.scene; // THREE.Group
