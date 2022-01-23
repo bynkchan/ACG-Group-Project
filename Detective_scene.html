@@ -81,13 +81,16 @@
 			// Set Background
 			// Author: Common
 			function setbackground(){
-				bgTexture = new THREE.TextureLoader().load('textures/test_box/crt.jpg');
+				bgTexture = new THREE.CubeTextureLoader()
+					.setPath( 'textures/office/' )
+					.load( [ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ] ); //new THREE.TextureLoader().load('textures/test_box/crt.jpg');
+				bgTexture.mapping = THREE.CubeRefractionMapping;
 				let bgGeometry = new THREE.PlaneGeometry(18, 10);
 				let bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture });
 				let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-				bgMesh.position.set(0, 0, -1);
+				//bgMesh.position.set(0, 0, -1);
 				//scene.add(bgMesh);
-				scene.background = new THREE.Color('red');
+				scene.background = bgTexture;
 			}
 
 			// Render the scene
