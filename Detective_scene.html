@@ -114,10 +114,12 @@
 			// Add crumpled paper to the scene
 			// Author: Xiaotian Yang 5121EG03
             function addPaper(){  
-                loader.load('./models/crumple2.gltf',function ( gltf ) {
-						gltf.scene.position.z = 2.0
+                loader.load('./models/scaled.gltf',function ( gltf ) {
+						const  crumpledPpaer1 = gltf.scene;
+						scene.add( gltf.scene );
+						crumpledPpaer1.scene.position.z = 2.0
+						
 
-                        var crumpledPaper1 = scene.add( gltf.scene );
                         gltf.animations; // Array<THREE.AnimationClip>
                         gltf.scene; // THREE.Group
                         gltf.scenes; // Array<THREE.Group>
