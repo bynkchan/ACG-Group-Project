@@ -120,7 +120,8 @@
                 loader.load('./models/scaled.gltf',function ( gltf ) {
 						const  crumpledPpaer1 = gltf.scene;
 						scene.add( gltf.scene );
-						crumpledPpaer1.scene.position.z = 2.0
+						crumpledPpaer1.position.y = -0.8
+						crumpledPpaer1.position.z = 2.0
 						
 
                         gltf.animations; // Array<THREE.AnimationClip>
@@ -349,8 +350,8 @@
 				const metalmaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
 					color: 0xffffff,
         			metalness: 1.0,
-					roughness: 0.4,
-        			clearcoat: 0.0,
+					roughness: 0.1,
+        			clearcoat: 1.0,
         			envMap: bgTexture
     			});
 
@@ -361,7 +362,7 @@
 				const GlassMaterial = new THREE.MeshPhysicalMaterial( { // Physical rendering
 					roughness: 0,  // Roughness of the surface
 					transmission: 1,  // Light transmission through the surface
-					thickness: 1, // Thickness (density?) of the glass, affects refraction
+					thickness: lensradius*2, // Thickness (density?) of the glass, affects refraction
 					reflectivity: 0.2, // Reflectivity of the glass, affects refraction
 					ior: 1.5, // Index of Refraction
 					clearcoat: 0.5 // Reflective laquer coating
@@ -432,9 +433,10 @@
 
 				// Position Magnifying Glass
 				MagnifyingGlass.position.x = .30;
-				MagnifyingGlass.position.y = 1.8;
-				MagnifyingGlass.position.z = 2.20;
+				MagnifyingGlass.position.y = 10.8;
+				MagnifyingGlass.position.z = 6.20;
                 MagnifyingGlass.rotation.x = -1.0;
+				MagnifyingGlass.rotation.z = 1.0;
 
 				scene.add(MagnifyingGlass);
 			}
