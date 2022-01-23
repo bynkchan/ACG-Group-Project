@@ -117,8 +117,7 @@
                 loader.load('./models/crumple2.gltf',function ( gltf ) {
 						gltf.scene.position.z = 2.0
 
-                        const crumpledPaper1 = scene.add( gltf.scene );
-						crumpledPaper1.scale.set(2,2,2);
+                        var crumpledPaper1 = scene.add( gltf.scene );
                         gltf.animations; // Array<THREE.AnimationClip>
                         gltf.scene; // THREE.Group
                         gltf.scenes; // Array<THREE.Group>
