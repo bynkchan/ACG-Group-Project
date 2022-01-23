@@ -82,15 +82,21 @@
 			// Set Background
 			// Author: Common
 			function setbackground(){
+				
 				bgTexture = new THREE.CubeTextureLoader()
-					.setPath( 'textures/office/' )
-					.load( [ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ] ); //new THREE.TextureLoader().load('textures/test_box/crt.jpg');
-				bgTexture.mapping = THREE.CubeRefractionMapping;
-				let bgGeometry = new THREE.PlaneGeometry(18, 10);
-				let bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture });
-				let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-				//bgMesh.position.set(0, 0, -1);
-				//scene.add(bgMesh);
+					.setPath( './textures/office/' )
+					.load( [ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ] ); 
+				
+				
+				let deskTexture = new THREE.TextureLoader().load('./textures/office/desk.jpg');
+				deskTexture.mapping = THREE.CubeRefractionMapping;
+				let deskGeometry = new THREE.PlaneGeometry(100, 100);
+				let deskMaterial = new THREE.MeshBasicMaterial({ map: deskTexture });
+				let deskMesh = new THREE.Mesh(deskGeometry, deskMaterial);
+				deskMesh.position.set(0, -2, 0);
+				deskMesh.rotation.x = -Math.PI / 2;
+				scene.add(deskMesh);
+				
 				scene.background = bgTexture;
 			}
 
