@@ -355,7 +355,7 @@
     			});
 
 				// Make the glass lens
-				const lensradius = 1.0;
+				const lensradius = 5.0;
 				const GlassGeometry = new THREE.SphereGeometry(lensradius); // Begin with a sphere
 				GlassGeometry.applyMatrix( new THREE.Matrix4().makeScale( 1.0, 1.0, 0.4 ) ); // Apply transformation matrix to turn it into an ellipsoid
 				const GlassMaterial = new THREE.MeshPhysicalMaterial( { // Physical rendering
@@ -372,7 +372,7 @@
 				const xrimcenter = 0;
 				const yrimcenter = 0;
 				const rimradius = lensradius;
-				const rimdepth = 0.7;
+				const rimdepth = 3.0;
 				const OuterRim = new THREE.Shape();
 				OuterRim.absarc(
 					xrimcenter,   // x-center
@@ -421,7 +421,7 @@
 				HandleGeometry.applyMatrix( new THREE.Matrix4().makeScale( 0.25, 1.0, 0.25 ) ); // Apply transformation matrix to turn it into an ellipsoid
 				const handlenormals = HandleGeometry.computeVertexNormals();
 				const Handle = new THREE.Mesh( HandleGeometry, woodmaterial );
-				Handle.position.y = yhandlepos  // Move handle down to be in line with link
+				Handle.position.y = yhandlepos*1.05  // Move handle down to be in line with link
 
 				// Group objects to make a magnifying glass
 				const MagnifyingGlass = new THREE.Object3D();  // Generic container for three object class
