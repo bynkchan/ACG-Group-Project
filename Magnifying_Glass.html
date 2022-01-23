@@ -41,12 +41,14 @@
 			// Define vertex shader
 			function vertexShader() {
   				return `
-    				varying vec3 resolution; 
+    				varying vec3 pos;
+					varying vec3 norm;
 
     				void main() {
-      					resolution = position; 
+      					pos = position; 
       					vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
       					gl_Position = projectionMatrix * modelViewPosition; 
+						norm = position; //0.1*vec3(1.0*gl_Position.x, 0.0*gl_Position.y, 1.0*gl_Position.z);
     				}
   				`
 			}
@@ -54,7 +56,8 @@
 			// Define fragment shader
 			function fragmentShader() {
 				return `
-      				varying vec3 resolution;
+      				varying vec3 pos;
+					varying vec3 norm;
 
 					// Random Number Generator
 					float rng(vec3 co){
@@ -74,16 +77,6 @@
    						return mix( a, b, uv.x ) + (c-a)*uv.y * (1.0-uv.x) + (d-b)*uv.x*uv.y + (c-a)*uv.z * (1.0-uv.x) + (d-b)*uv.x*uv.z; 
 					}
 
-					// Marble texture
-					float marbleturbulence(vec3 p){
-   						float f = 0.0, scale;
-   						for (int i=0; i<4; i++){
-      						scale = pow(pow(2.0, 4.0/3.0), float(i));
-    						f += abs(vnoise(p*scale))/scale;
-   						}
-   						return f;
-					}
-
 					// Wood texture
 					float woodturbulence(vec3 p){
 						float f = 0.0, scale;
@@ -94,15 +87,24 @@
 						return f;
 					}
 
+					// Directional light
+					vec3 directionalshading( vec3 p, vec3 n, vec3 csurf ) {
+   						const vec3 l = normalize( vec3(0.0, 0.0, 1.0) ); // light direction
+   						vec3 clight = vec3(1.0, 1.0, 1.0); // Colour of light source
+   						return max(0.0,dot(l,n)) * clight * csurf; // Shaded colour
+					}
+
 					// Shader program
       				void main() {
 						// Texturing
-						float noise = woodturbulence(resolution);
-						float tex = 1.0 + sin(resolution.x*30.0 + 0.2*noise)/2.0;
-
+						float noise = woodturbulence(pos);
+						float tex = 1.0 + sin(pos.x*30.0 + 0.2*noise)/2.0;
 						vec3 csurf = vec3(0.75, 0.45, 0.2)*tex; // Surface color
 
-       	 				gl_FragColor = vec4(csurf, 1.0);
+						// Lighting
+   						vec3 lighting = directionalshading(pos, norm, csurf);
+
+       	 				gl_FragColor = vec4(lighting, 1.0);
       				}
   				`
 			}
@@ -132,9 +134,6 @@
 			function addMagnifyingGlass(){
 				// Uniforms for shaders
 				let uniforms = {
-					time: { value: 1.0 },
-					resolution: { value: new THREE.Vector3() },
-					normal: { value: new THREE.Vector3() }
     			}
 
 				// Wooden material for wood components
@@ -149,7 +148,7 @@
 					color: 0xffffff,
         			metalness: 1.0,
 					roughness: 0.4,
-        			clearcoat: 1.0,
+        			clearcoat: 0.0,
         			envMap: bgTexture
     			});
 
