@@ -14,7 +14,6 @@
 			/*
 			This code makes use of functions and shapes from the three.js library, whose documentation is available at this link:  https://threejs.org/docs
 			*/
-			// import { GLTFLoader } from './js/GLTFLoader.js';
 
 			// Global variables
 			window.addEventListener('load', init)
@@ -73,9 +72,9 @@
 				intensity: 0.8 
 				} );
 				scene.add( directionalLight );
-				directionalLight.position.x = 0.0;
+				directionalLight.position.x = 1.0;
 				directionalLight.position.y = 1.0;
-				directionalLight.position.z = 0.0;
+				directionalLight.position.z = 1.0;
 			}
 			
 			// Set camera properties
@@ -99,6 +98,28 @@
 
 			// Make the magnifying glass
 			function addMagnifyingGlass(){
+				// Uniforms for shaders
+				let uniforms = {
+        			colorB: {type: 'vec3', value: new THREE.Color(0xACB6E5)},
+        			colorA: {type: 'vec3', value: new THREE.Color(0x74ebd5)}
+    			}
+
+				// Wooden material for wood components
+				const woodmaterial =  new THREE.ShaderMaterial({
+    				uniforms: uniforms,
+    				fragmentShader: fragmentShader(),
+    				vertexShader: vertexShader(),
+  				})
+
+				// Metal material for metal components
+				const metalmaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
+					color: 0xffffff,
+        			metalness: 1.0,
+					roughness: 0.4,
+        			clearcoat: 1.0,
+        			envMap: bgTexture
+    			});
+
 				// Make the glass lens
 				const lensradius = 1.0;
 				const GlassGeometry = new THREE.SphereGeometry(lensradius); // Begin with a sphere
@@ -148,14 +169,7 @@
 					curveSegments: 500
 				};
 				const RimGeometry = new THREE.ExtrudeGeometry(OuterRim, RimExtrudeSettings);
-				const RimMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
-					color: 0xffffff,
-        			metalness: 1.0,
-					roughness: 0.4,
-        			clearcoat: 1.0,
-        			envMap: bgTexture
-    			});
-				const Rim = new THREE.Mesh( RimGeometry, RimMaterial );
+				const Rim = new THREE.Mesh( RimGeometry, metalmaterial );
 				Rim.position.z = -rimdepth/2.0; // Center ring in middle of lens for extrusion
 
 				// Make handle
@@ -166,26 +180,12 @@
 				const handleGirth = linkradius;
 				const yhandlepos = (ylinkpos)-(handleLength/1.3); // Move handle down to be in line with link
 				const LinkGeometry = new THREE.TorusGeometry( linkradius, tube, 20, 100 );
-				const LinkMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
-					color: 0xffffff,
-        			metalness: 1.0,
-					roughness: 0.4,
-        			clearcoat: 1.0,
-        			envMap: bgTexture
-    			});
-				const Link = new THREE.Mesh( LinkGeometry, LinkMaterial ); // Metal link between handle and rim
+				const Link = new THREE.Mesh( LinkGeometry, metalmaterial ); // Metal link between handle and rim
 				Link.position.y = ylinkpos; // Move link down to edge of rim
 				Link.rotation.x = Math.PI/2; // Rotate to put it in the plane of the rim
 				const HandleGeometry = new THREE.SphereGeometry(handleLength); // Begin with a sphere
 				HandleGeometry.applyMatrix( new THREE.Matrix4().makeScale( 0.25, 1.0, 0.25 ) ); // Apply transformation matrix to turn it into an ellipsoid
-				const HandleMaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
-					color: 0xffffff,
-        			metalness: 1.0,
-					roughness: 0.4,
-        			clearcoat: 1.0,
-        			envMap: bgTexture
-    			});
-				const Handle = new THREE.Mesh( HandleGeometry, HandleMaterial );
+				const Handle = new THREE.Mesh( HandleGeometry, woodmaterial );
 				Handle.position.y = yhandlepos  // Move handle down to be in line with link
 
 				// Group objects to make a magnifying glass
@@ -200,10 +200,6 @@
 				sceneobjects.push(MagnifyingGlass) // Add magnifying glass to scene objects
 
 			}
-
-
-			
-
 
 			// Animate the scene
 			function animate() {
