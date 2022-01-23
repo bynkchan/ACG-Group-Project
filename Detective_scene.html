@@ -19,7 +19,7 @@
             import { GLTFLoader } from './js/GLTFLoader.js';
 
 			// Global Parameters
-            let scene, bgTexture, bgMesh, camera, loader, renderer, light, obj, position, mesh; 
+            let scene, bgTexture, bgMesh, camera, loader, renderer, light, obj, position, Smoke; 
             
 			// Initialize the scene
 			// Author: Common
@@ -96,6 +96,7 @@
 				addMagnifyingGlass()  
 				addPaper();  
 				addCigar();  
+				addSmoke();
 	            renderer.render( scene, camera );
             }
 
@@ -103,7 +104,10 @@
 			// Author: Common
 			function animate() {
 	            requestAnimationFrame( animate );
-				addSmoke();
+				const time = Date.now() * 0.005;
+                
+                Smoke.rotation.y = time * 10;
+
 				renderer.render( scene, camera );
             }
 
@@ -152,7 +156,7 @@
 			// Author: Erich Doclaf 5121FG93
 			function addSmoke(){
 				//Smoke
-                const triangles = 1500;
+                const triangles = 1500; //1500
 
 				const geometry = new THREE.BufferGeometry();
 
@@ -224,7 +228,7 @@
                     const vx = 1, vy = 1, vz = 1;
 					color.setRGB( vx, vy, vz );
 
-					const alpha = Math.random();
+					const alpha = Math.random()*0.5;
 
 					colors.push( color.r, color.g, color.b, alpha );
 					colors.push( color.r, color.g, color.b, alpha );
@@ -250,8 +254,8 @@
 					side: THREE.DoubleSide, vertexColors: true, transparent: true
 				} );
 
-                mesh = new THREE.Mesh( geometry, material );
-				scene.add( mesh );
+                Smoke = new THREE.Mesh( geometry, material );
+				scene.add( Smoke );
 			}
 
 			// Define vertex shader for magnifying glass handle
