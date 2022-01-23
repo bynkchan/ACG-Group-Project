@@ -41,3 +41,8 @@ stage of the nal scene will rotate steadily in time, so each component will eve
 and some interaction (either correct layering of objects or correct magnication of objects) will take
 place. Hopefully, we will have an interactive component where the user can move around the camera
 and choose arbitrary lighting.
+
+## Sources
+
+# 3D objects
+https://sketchfab.com/3d-models/cigar-63a0cc2192284d9c8cfdec0ed630ba03
