@@ -118,13 +118,13 @@
 			// Add crumpled paper to the scene
 			// Author: Xiaotian Yang 5121EG03
             function addPaper(){  
-                loader.load('./models/scaled.gltf',function ( gltf ) {
-						const  crumpledPpaer1 = gltf.scene;
-						crumpledPpaer1.position.y = -0.8
-						crumpledPpaer1.position.z = 2.0;
-						//crumpledPpaer1.scale.set(5,5,5);
-						scene.add(crumpledPpaer1);
-						//mixer = new THREE.AnimationMixer( crumpledPpaer1 );
+                loader.load('./models/crumple1.gltf',function ( gltf ) {
+						const  crumpledPaper1 = gltf.scene;
+						crumpledPaper1.position.y = -0.8;
+						crumpledPaper1.position.z = 2.0;
+						//crumpledPaper1.scale.set();
+						scene.add(crumpledPaper1);
+						//mixer = new THREE.AnimationMixer( crumpledPaper1 );
 						//mixer.clipAction( gltf.animations[ 0 ] ).play();
                 		gltf.animations; // Array<THREE.AnimationClip>
                         gltf.scenes; // Array<THREE.Group>
@@ -132,6 +132,29 @@
                         gltf.asset; // Object
                     }
                 );
+
+				loader.load('./models/crumple2.gltf',function(gltf){
+					const  crumpledPaper2 = gltf.scene;
+					crumpledPaper2.position.y = -0.8;
+					crumpledPaper2.position.x = 20;
+					crumpledPaper2.position.z = 2.0;
+					crumpledPaper2.scale.set(4,4,4);
+					scene.add(crumpledPaper2);
+					//mixer = new THREE.AnimationMixer( crumpledPaper2 );
+					//mixer.clipAction( gltf.animations[ 0 ] ).play();
+
+				});
+				loader.load('./models/paper1.gltf',function(gltf){
+					const  paper1 = gltf.scene;
+					paper1.position.y = -1.1;
+					paper1.position.x = -10;
+					paper1.position.z = 10;
+					paper1.scale.set(4,4,4);
+					scene.add(paper1);
+					//mixer = new THREE.AnimationMixer( crumpledPpaer2 );
+					//mixer.clipAction( gltf.animations[ 0 ] ).play();
+
+				});
             }
 
 			// Add cigar to the scene
