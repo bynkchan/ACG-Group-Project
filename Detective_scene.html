@@ -3,39 +3,294 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Detective Scene</title>
+		<author>Akirabha Chanuntranont 5121DG04-3</author>
+		<author>Erich Doclaf 5121FG93</author>
+		<author>Xiaotian Yang 5121EG03</author>
 		<style>
 			body { margin: 0; }
+            canvas{ display:block;}
 		</style>
 	</head>
 	<body>
         <script src="js/three.js"></script>
 		<script type="module">
+            // Import Libraries
+            import { OrbitControls } from './js/OrbitControls.js';
+            import { GLTFLoader } from './js/GLTFLoader.js';
 
+            // Global Variables
+            window.addEventListener('load', init)
             const scene = new THREE.Scene();
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-
+            const loader = new GLTFLoader();
 			const renderer = new THREE.WebGLRenderer();
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			document.body.appendChild( renderer.domElement );
+            let bgTexture
+            const sceneobjects = []
 
-			const geometry = new THREE.BoxGeometry();
-			const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-			const cube = new THREE.Mesh( geometry, material );
-			scene.add( cube );
+            // Initialize the scene
+            function init(){
+                renderer.setSize( window.innerWidth, window.innerHeight );
+			    document.body.appendChild( renderer.domElement );
+                camera.position.z = 10;
+                setbackground();
+                setlighting();
+                addpaper();
+                addMagnifyingGlass();
+                // Organize the objects
+                sceneobjects[0].position.z += 1.20;
+                sceneobjects[0].rotation.x -= 1.20;
+                sceneobjects[0].rotation.z -= 1.20;
+                initControls();
+			    animate();
+            }
 
-			camera.position.z = 5;
+            // Set Background
+			function setbackground(){
+                // Author:  Akirabha Chanuntranont 5121DG04-3
+				bgTexture = new THREE.TextureLoader().load('textures/test_box/crt.jpg');
+				let bgGeometry = new THREE.PlaneGeometry(18, 10);
+				let bgMaterial = new THREE.MeshBasicMaterial({ map: bgTexture });
+				let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+				bgMesh.position.set(0, 0, -1);
+				//scene.add(bgMesh);
+				scene.background = new THREE.Color('black');
+			}
 
+            // Set Lighting
+            function setlighting(){
+                // Directional light
+                const directionalLight = new THREE.DirectionalLight( { 
+				color: 0xffffff, 
+				intensity: 0.8 
+				} );
+				scene.add( directionalLight );
+				directionalLight.position.x = 1.0;
+				directionalLight.position.y = 1.0;
+				directionalLight.position.z = 1.0;
+
+                // Hemispherical light
+                const hemispherelight = new THREE.HemisphereLight( 0xffffff, 0x000000, 1 );
+                scene.add( hemispherelight );
+            }
+
+            // Animate the scene
 			function animate() {
 				requestAnimationFrame( animate );
-
-				cube.rotation.x += 0.01;
-				cube.rotation.y += 0.01;
-
 				renderer.render( scene, camera );
 			};
 
-			animate();
+            // Initialize user controls
+            function initControls() {
+                var controls = new OrbitControls(camera, renderer.domElement);
+                controls.target.set( 0, 0, 0 );
+                controls.enableDamping = true;
+                //controls.dampingFactor = 0.25;
+                controls.enableZoom = true;
+                controls.autoRotate = false;
+                controls.autoRotateSpeed = 0.5;
+                controls.minDistance = 1;
+                controls.maxDistance = 2000;
+                controls.enablePan = true;
+            }
+            
+            // Add crumpled paper to the scene
+            function addpaper(){
+                // Author: Xiaotian Yang 5121EG03
+                loader.load(
+                    // resource URL
+                    './crumple1.gltf',
+                    // called when the resource is loaded
+                    function ( gltf ) {
 
+                        scene.add( gltf.scene );
+                        sceneobjects.push(gltf.scene)  // Add crumpled paper object to global objects list
+
+                        gltf.animations; // Array<THREE.AnimationClip>
+                        gltf.scene; // THREE.Group
+                        gltf.scenes; // Array<THREE.Group>
+                        gltf.cameras; // Array<THREE.Camera>
+                        gltf.asset; // Object
+                    }
+                );
+            }
+
+            // Define vertex shader for magnifying glass handle
+			function vertexShaderMGHandle() {
+                // Author:  Akirabha Chanuntranont 5121DG04-3
+  				return `
+    				varying vec3 pos;
+					varying vec3 norm;
+
+    				void main() {
+      					pos = position; 
+      					vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+      					gl_Position = projectionMatrix * modelViewPosition; 
+						norm = position; //0.1*vec3(1.0*gl_Position.x, 0.0*gl_Position.y, 1.0*gl_Position.z);
+    				}
+  				`
+			}
+
+			// Define fragment shader for magnifying glass handle
+			function fragmentShaderMGHandle() {
+                // Author:  Akirabha Chanuntranont 5121DG04-3
+				return `
+      				varying vec3 pos;
+					varying vec3 norm;
+
+					// Random Number Generator
+					float rng(vec3 co){
+   						const highp float seed = 12.9898;
+   						highp float a = seed;
+   						highp float b = 78.233, c = 43758.5453;
+   						highp float dt= dot(co.xyz, vec3(a,b,c));
+   						highp float sn= mod(dt,3.14159265358979323846);
+   						return fract(sin(sn) * c);
+					}
+
+					// Value Noise
+					float vnoise(vec3 st){
+   						vec3 i = floor(st), f = fract(st);
+   						float a = rng(i), b = rng(i + vec3(1.0, 0.0, 1.0)), c = rng(i + vec3(0.0, 1.0, 1.0)), d = rng(i + vec3(1.0, 1.0, 1.0));
+   						vec3 uv= smoothstep(0.0, 0.7, f);
+   						return mix( a, b, uv.x ) + (c-a)*uv.y * (1.0-uv.x) + (d-b)*uv.x*uv.y + (c-a)*uv.z * (1.0-uv.x) + (d-b)*uv.x*uv.z; 
+					}
+
+					// Wood texture
+					float woodturbulence(vec3 p){
+						float f = 0.0, scale;
+						for (int i=0; i<4; i++){
+							scale = pow( pow(2.0, 4.0/3.0), float(i) );
+							f += vnoise(p*scale)/scale;
+						}
+						return f;
+					}
+
+					// Directional light
+					vec3 directionalshading( vec3 p, vec3 n, vec3 csurf ) {
+   						const vec3 l = normalize( vec3(0.0, 0.0, 1.0) ); // light direction
+   						vec3 clight = vec3(1.0, 1.0, 1.0); // Colour of light source
+   						return max(0.0,dot(l,n)) * clight * csurf; // Shaded colour
+					}
+
+					// Shader program
+      				void main() {
+						// Texturing
+						float noise = woodturbulence(pos);
+						float tex = 1.0 + sin(pos.x*30.0 + 0.2*noise)/2.0;
+						vec3 csurf = vec3(0.75, 0.45, 0.2)*tex; // Surface color
+
+						// Lighting
+   						vec3 lighting = directionalshading(pos, norm, csurf);
+
+       	 				gl_FragColor = vec4(lighting, 1.0);
+      				}
+  				`
+			}
+
+			// Make the magnifying glass
+			function addMagnifyingGlass(){
+                // Author:  Akirabha Chanuntranont 5121DG04-3
+				// Uniforms for shaders
+				let uniforms = {
+    			}
+
+				// Wooden material for wood components
+				const woodmaterial =  new THREE.ShaderMaterial({
+    				uniforms: uniforms,
+    				fragmentShader: fragmentShaderMGHandle(),
+    				vertexShader: vertexShaderMGHandle(),
+  				})
+
+				// Metal material for metal components
+				const metalmaterial = new THREE.MeshPhysicalMaterial({ // Physical rendering
+					color: 0xffffff,
+        			metalness: 1.0,
+					roughness: 0.4,
+        			clearcoat: 0.0,
+        			envMap: bgTexture
+    			});
+
+				// Make the glass lens
+				const lensradius = 1.0;
+				const GlassGeometry = new THREE.SphereGeometry(lensradius); // Begin with a sphere
+				GlassGeometry.applyMatrix( new THREE.Matrix4().makeScale( 1.0, 1.0, 0.4 ) ); // Apply transformation matrix to turn it into an ellipsoid
+				const GlassMaterial = new THREE.MeshPhysicalMaterial( { // Physical rendering
+					roughness: 0,  // Roughness of the surface
+					transmission: 1,  // Light transmission through the surface
+					thickness: 1, // Thickness (density?) of the glass, affects refraction
+					reflectivity: 0.2, // Reflectivity of the glass, affects refraction
+					ior: 1.5, // Index of Refraction
+					clearcoat: 0.5 // Reflective laquer coating
+				} );
+				const Glass = new THREE.Mesh( GlassGeometry, GlassMaterial );
+
+				// Make the lens rim
+				const xrimcenter = 0;
+				const yrimcenter = 0;
+				const rimradius = lensradius;
+				const rimdepth = 0.7;
+				const OuterRim = new THREE.Shape();
+				OuterRim.absarc(
+					xrimcenter,   // x-center
+					yrimcenter,   // y-center
+					rimradius,   // radius
+					0,   // start angle
+					Math.PI*1.99, // end angle (must overlap to avoid clipping)
+					false  // sweep arc clockwise?
+				);
+				const InnerRim = new THREE.Path();
+				InnerRim.absarc(
+					xrimcenter,   // x-center
+					yrimcenter,   // y-center
+					rimradius*0.9,   // radius
+					0,   // start angle
+					Math.PI*2.01, // end angle (must overlap to avoid clipping)
+					true  // sweep arc clockwise?
+				);
+				OuterRim.holes.push(InnerRim);
+				const RimExtrudeSettings = {
+					steps: 1,
+					depth: rimdepth,
+					bevelEnabled: true,
+					bevelThickness: 0.05,
+					bevelSize: 0.07,
+					bevelOffset: 0,
+					bevelSegments: 100,
+					curveSegments: 500
+				};
+				const RimGeometry = new THREE.ExtrudeGeometry(OuterRim, RimExtrudeSettings);
+				const Rim = new THREE.Mesh( RimGeometry, metalmaterial );
+				Rim.position.z = -rimdepth/2.0; // Center ring in middle of lens for extrusion
+
+				// Make handle
+				const linkradius = rimdepth/2.7;
+				const tube = linkradius*0.5;
+				const ylinkpos = -rimradius-tube*0.8; // Move link down to edge of rim
+				const handleLength = rimradius*1.3;
+				const handleGirth = linkradius;
+				const yhandlepos = (ylinkpos)-(handleLength/1.3); // Move handle down to be in line with link
+				const LinkGeometry = new THREE.TorusGeometry( linkradius, tube, 20, 100 );
+				const Link = new THREE.Mesh( LinkGeometry, metalmaterial ); // Metal link between handle and rim
+				Link.position.y = ylinkpos; // Move link down to edge of rim
+				Link.rotation.x = Math.PI/2; // Rotate to put it in the plane of the rim
+				const HandleGeometry = new THREE.SphereGeometry(handleLength); // Begin with a sphere
+				HandleGeometry.applyMatrix( new THREE.Matrix4().makeScale( 0.25, 1.0, 0.25 ) ); // Apply transformation matrix to turn it into an ellipsoid
+				const handlenormals = HandleGeometry.computeVertexNormals();
+				const Handle = new THREE.Mesh( HandleGeometry, woodmaterial );
+				Handle.position.y = yhandlepos  // Move handle down to be in line with link
+
+				// Group objects to make a magnifying glass
+				const MagnifyingGlass = new THREE.Object3D();  // Generic container for three object class
+				MagnifyingGlass.add(Glass); // Add the glass lens to the magnifying glass
+				MagnifyingGlass.add(Rim); // Add the rim to the magnifying glass
+				MagnifyingGlass.add(Link); // Add the link to the magnifying glass
+				MagnifyingGlass.add(Handle); // Add the handle to the magnifying glass
+				MagnifyingGlass.position.y = 0.8;
+				scene.add(MagnifyingGlass);
+				sceneobjects.push(MagnifyingGlass) // Add magnifying glass to scene objects
+			}
+            
+        
 		</script>
 	</body>
 </html>
