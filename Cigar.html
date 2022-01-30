@@ -80,7 +80,7 @@
                 scene = new THREE.Scene();
                 light = new THREE.HemisphereLight( 0xffffff, 0x000000, 5 );
                 scene.add( light );
-                scene.background = new THREE.Color('red');
+                scene.background = new THREE.Color('white');
                 scene.fog = new THREE.Fog(0x5d0361, 10, 1500);
 
                 camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -185,7 +185,7 @@
 					//const vx = ( x / n ) + 0.5;
 					//const vy = ( y / n ) + 0.5;
 					//const vz = ( z / n ) + 0.5;
-                    const vx = 1, vy = 1, vz = 1;
+                    const vx = 0.5, vy = 0.5, vz = 0.5;
 					color.setRGB( vx, vy, vz );
 
 					const alpha = Math.random();
